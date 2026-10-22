@@ -483,7 +483,15 @@ final class AppState {
             return
         }
 
-        history.record(Dictation(text: text, date: .now, duration: duration, appName: target.appName, bundleID: target.bundleID))
+        let dictation = Dictation(text: text, date: .now, duration: duration, appName: target.appName, bundleID: target.bundleID)
+        history.record(dictation)
+
+        // You switched apps while it was working: copy the text instead of pasting it in the wrong place
+        guard DictationTarget.frontmost().bundleID == target.bundleID else {
+            history.copy(dictation)
+            show(notice: "Copiado: cambiaste de app", isError: true)
+            return
+        }
 
         // Si lo de antes del cursor se quedó a media frase, el dictado la continúa.
         text = ContextJoiner.adapt(text, after: context.textBefore, keepingCase: vocabulary.entries.map(\.term) + context.recentNames)
